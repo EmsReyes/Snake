@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Snake Game - ¡Juega y Diviértete!</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #333;
+      color: #fff;
+      font-family: Arial, sans-serif;
+    }
+
+    h1 {
+      font-size: 36px; /* Tamaño del título del juego */
+      margin-bottom: 20px; /* Espacio entre el título y el área de juego */
+    }
+
+    .game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .game-area {
+      position: relative;
+      width: 400px;
+      height: 400px;
+      background-color: #f0f0f0;
+      border: 2px solid #000;
+      margin-bottom: 20px; /* Espacio entre el área de juego y los botones */
+    }
+
+    .snake, .apple {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+    }
+
+    .snake {
+      background-color: green;
+    }
+
+    .apple {
+      background-color: red;
+    }
+
+    .button-container {
+      display: flex;
+      justify-content: center;
+    }
+
+    .button-container button {
+      margin: 0 5px; /* Espacio entre los botones */
+      padding: 10px 20px; /* Aumentar el tamaño del botón */
+      background-color: #4CAF50; /* Color de fondo */
+      color: white; /* Color del texto */
+      border: none;
+      border-radius: 5px; /* Bordes redondeados */
+      cursor: pointer;
+      transition: background-color 0.3s ease; /* Transición suave del color de fondo */
+    }
+
+    .button-container button:hover {
+      background-color: #45a049; /* Cambio de color al pasar el cursor */
+    }
+
+    .score {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 18px;
+      color: black;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body>
+  <h1>Snake Game - ¡Juega y Diviértete!</h1>
+  <div class="game-container">
+    <div class="game-area">
+      <div class="apple"></div>
+      <div class="score">Score: <span id="score">0</span></div>
+    </div>
+    <div class="button-container">
+      <button id="startButton">Start</button>
+      <button id="restartButton" disabled>Restart</button>
+    </div>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const gameArea = document.querySelector('.game-area');
+      const appleElement = document.querySelector('.apple');
+      const startButton = document.getElementById('startButton');
+      const restartButton = document.getElementById('restartButton');
+      const scoreElement = document.getElementById('score');
+
+      let snake = [{ x: 0, y: 0 }];
+      let dx = 20;
+      let dy = 0;
+      let appleX = 0;
+      let appleY = 0;
+      let isGameOver = false;
+      let score = 0;
+      let gameInterval;
+      let speed = 200; // Velocidad inicial de la serpiente
+
+      function randomPosition() {
+        return Math.floor(Math.random() * 20) * 20;
+      }
+
+      function placeApple() {
+        appleX = randomPosition();
+        appleY = randomPosition();
+        appleElement.style.left = `${appleX}px`;
+        appleElement.style.top = `${appleY}px`;
+      }
+
+      function moveSnake() {
+        if (isGameOver) return;
+
+        const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+
+        if (
+          head.x < 0 ||
+          head.x >= gameArea.offsetWidth ||
+          head.y < 0 ||
+          head.y >= gameArea.offsetHeight ||
+          snake.slice(1).some(segment => segment.x === head.x && segment.y === head.y)
+        ) {
+          endGame();
+          return;
+        }
+
+        snake.unshift(head);
+
+        if (head.x === appleX && head.y === appleY) {
+          score++;
+          scoreElement.textContent = score;
+          placeApple();
+          increaseSpeed(); // Incrementar la velocidad cada vez que se come una manzana
+        } else {
+          snake.pop();
+        }
+
+        updateSnake();
+      }
+
+      function updateSnake() {
+        const snakeElements = document.querySelectorAll('.snake');
+        snakeElements.forEach(element => element.remove());
+
+        snake.forEach(segment => {
+          const snakeSegment = document.createElement('div');
+          snakeSegment.classList.add('snake');
+          snakeSegment.style.left = `${segment.x}px`;
+          snakeSegment.style.top = `${segment.y}px`;
+          gameArea.appendChild(snakeSegment);
+        });
+      }
+
+      function endGame() {
+        isGameOver = true;
+        clearInterval(gameInterval);
+        restartButton.disabled = false;
+        alert('Game Over! Press OK to restart.');
+      }
+
+      function resetGame() {
+        snake = [{ x: 0, y: 0 }];
+        dx = 20;
+        dy = 0;
+        isGameOver = false;
+        score = 0;
+        scoreElement.textContent = score;
+        placeApple();
+        restartButton.disabled = true;
+        speed = 200; // Reiniciar la velocidad
+      }
+
+      function increaseSpeed() {
+        speed -= 5; // Incrementar la velocidad
+        clearInterval(gameInterval); // Limpiar el intervalo actual
+        gameInterval = setInterval(moveSnake, speed); // Establecer el nuevo intervalo con la velocidad actualizada
+      }
+
+      document.addEventListener('keydown', (e) => {
+        if (!isGameOver) {
+          if (e.key === 'ArrowUp' && dy !== 20) {
+            dx = 0;
+            dy = -20;
+          }
+          if (e.key === 'ArrowDown' && dy !== -20) {
+            dx = 0;
+            dy = 20;
+          }
+          if (e.key === 'ArrowLeft' && dx !== 20) {
+            dx = -20;
+            dy = 0;
+          }
+          if (e.key === 'ArrowRight' && dx !== -20) {
+            dx = 20;
+            dy = 0;
+          }
+        }
+      });
+
+      startButton.addEventListener('click', () => {
+        resetGame();
+        startButton.disabled = true;
+        gameInterval = setInterval(moveSnake, speed);
+      });
+
+      restartButton.addEventListener('click', () => {
+        resetGame();
+        startButton.disabled = false;
+      });
+
+      resetGame();
+    });
+  </script>
+</body>
+</html>
